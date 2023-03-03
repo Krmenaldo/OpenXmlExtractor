@@ -8,12 +8,50 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DocumentFormat.OpenXml" Version="2.19.0" />
-    <PackageReference Include="System.IO.Packaging" Version="7.0.0" />
+    <None Remove="documents\Attendance Policy_2023.docx" />
+    <None Remove="documents\Compensatory Off Policy_Jan2023.docx" />
+    <None Remove="documents\Emergency Financial Assistance Policy.docx" />
+    <None Remove="documents\Employee Referral Policy_2023.docx" />
+    <None Remove="documents\POSH Policy 2023.docx" />
+    <None Remove="documents\SL Relocation Policy_2023.docx" />
+    <None Remove="documents\SL- Leave Policy_2023.docx" />
+    <None Remove="documents\Technical Certification Policy_2023.docx" />
+    <None Remove="documents\Whistle Blower Policy_2023.docx" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="documents\" />
+    <Content Include="documents\Attendance Policy_2023.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="documents\Compensatory Off Policy_Jan2023.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="documents\Emergency Financial Assistance Policy.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="documents\Employee Referral Policy_2023.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="documents\POSH Policy 2023.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="documents\SL Relocation Policy_2023.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="documents\SL- Leave Policy_2023.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="documents\Technical Certification Policy_2023.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="documents\Whistle Blower Policy_2023.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" Version="2.19.0" />
+    <PackageReference Include="System.IO.Packaging" Version="7.0.0" />
   </ItemGroup>
 
 </Project>
