@@ -16,7 +16,7 @@
         }
         public override string ToString()
         {
-            return Heading1 + "|" + Heading2 + "|" + Heading3 + "|" + Paragraph;
+            return Heading1 + "\t" + Heading2 + "\t" + Heading3 + "\t" + Paragraph;
         }
     }
 

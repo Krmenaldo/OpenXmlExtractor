@@ -5,8 +5,18 @@ using ParagraphExtractor;
 
 Console.WriteLine("Hello, World!");
 string[] files =  {
-    "XXX"
+    "Attendance Policy_2023",
+    "Compensatory Off Policy_Jan2023",
+    "Emergency Financial Assistance Policy",
+    "Employee Referral Policy_2023",
+    "POSH Policy 2023",
+    "SL- Leave Policy_2023",
+    "SL Relocation Policy_2023",
+    "Technical Certification Policy_2023",
+    "Whistle Blower Policy_2023"
 };
+var cnt = 0;
+var line = string.Empty;
 foreach (var file in files)
 {
     using (var doc = WordprocessingDocument.Open("documents\\" + file + ".docx", false))
@@ -27,6 +37,8 @@ foreach (var file in files)
         foreach (var item in doc.MainDocumentPart.Document.Body.ChildElements)
         {
             if (item is not Paragraph && item is not Table)
+                continue;
+            if (string.IsNullOrEmpty(item.InnerText))
                 continue;
             if (item is Table)
             {
@@ -65,17 +77,17 @@ foreach (var file in files)
             if (item is Paragraph)
             {
                 var paragraph = (Paragraph)item;
-                var images = GetImagesFromParagraph(paragraph, doc);
-                if(images != null && images.Any())
-                {
-                    foreach (var image in images)
-                    {
-                        using (var fileStream = File.Create(Guid.NewGuid() + ExtensionFromContentType(image.ContentType)))
-                        {
-                            image.GetStream().CopyTo(fileStream);
-                        }
-                    }
-                }
+                //var images = GetImagesFromParagraph(paragraph, doc);
+                //if(images != null && images.Any())
+                //{
+                //    foreach (var image in images)
+                //    {
+                //        using (var fileStream = File.Create(Guid.NewGuid() + ExtensionFromContentType(image.ContentType)))
+                //        {
+                //            image.GetStream().CopyTo(fileStream);
+                //        }
+                //    }
+                //}
                 var style = paragraph.ParagraphProperties?.ParagraphStyleId?.Val?.Value;
                 if ((!string.IsNullOrEmpty(style) && style.Contains("Heading")) || paragraph.ParagraphProperties?.NumberingProperties != null)
                 {
@@ -126,28 +138,30 @@ foreach (var file in files)
                     else if (paragraph.ParagraphProperties?.NumberingProperties != null)
                     {
                         var last = document.Paragraphs.LastOrDefault();
+                        var addNewLine = true;
                         if (last == null || last.Heading1 != heading1 || last.Heading2 != heading2 || last.Heading3 != heading3)
                         {
                             document.Paragraphs.Add(new ExtractedParagraph(heading1, heading2, FillAdditionalHeading(heading3, heading4, heading5, heading6), string.Empty));
                             last = document.Paragraphs.LastOrDefault();
+                            addNewLine = false;
                         }
                         if (paragraph.ParagraphProperties.NumberingProperties.NumberingLevelReference.Val.Value == 0)
                         {
                             level0counter++;
                             level1counter = 0;
                             level2counter = 0;
-                            last.Paragraph += " \\n " + "[" + level0counter + "] " + paragraph.InnerText;
+                            last.Paragraph += (addNewLine ? " \\n " : string.Empty) + "[" + level0counter + "] " + paragraph.InnerText;
                         }
                         if (paragraph.ParagraphProperties.NumberingProperties.NumberingLevelReference.Val.Value == 1)
                         {
                             level1counter++;
                             level2counter = 0;
-                            last.Paragraph += " \\n " + "[" + level0counter + "." + level1counter + "] " + paragraph.InnerText;
+                            last.Paragraph += (addNewLine ? " \\n " : string.Empty) + "[" + level0counter + "." + level1counter + "] " + paragraph.InnerText;
                         }
                         if (paragraph.ParagraphProperties.NumberingProperties.NumberingLevelReference.Val.Value == 2)
                         {
                             level2counter++;
-                            last.Paragraph += " \\n " + "[" + level0counter + "." + level1counter + "." + level2counter + "] " + paragraph.InnerText;
+                            last.Paragraph += (addNewLine ? " \\n " : string.Empty) + "[" + level0counter + "." + level1counter + "." + level2counter + "] " + paragraph.InnerText;
                         }
                     }
                 }
@@ -158,10 +172,15 @@ foreach (var file in files)
                 }
             }
         }
-        var text = string.Join(Environment.NewLine, document.Paragraphs.Select(p => p.ToString()));
-        File.WriteAllTextAsync(file + ".txt", text);
+        foreach(var paragraph in document.Paragraphs)
+        {
+            line += cnt.ToString() + "\t" + file + "\t" + paragraph.ToString();
+            line += Environment.NewLine;
+            cnt++;
+        }
     }
 }
+File.WriteAllTextAsync("all.csv", line);
 Console.ReadLine();
 
 string FillAdditionalHeading(string heading3, string heading4, string heading5, string heading6)
