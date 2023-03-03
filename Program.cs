@@ -69,7 +69,11 @@ foreach (var file in files)
                                 counter++;
                             }
                         }
-                        document.Paragraphs.Add(new ExtractedParagraph(heading1, heading2, FillAdditionalHeading(heading3, heading4, heading5, heading6), tableText));
+                        var last = document.Paragraphs.LastOrDefault();
+                        if (last == null || last.Heading1 != heading1 || last.Heading2 != heading2 || last.Heading3 != heading3)
+                            document.Paragraphs.Add(new ExtractedParagraph(heading1, heading2, FillAdditionalHeading(heading3, heading4, heading5, heading6), tableText));
+                        else
+                            last.Paragraph += " \\n " + tableText;
                     }
                 }
 
@@ -167,7 +171,11 @@ foreach (var file in files)
                 }
                 else
                 {
-                    document.Paragraphs.Add(new ExtractedParagraph(heading1, heading2, FillAdditionalHeading(heading3, heading4, heading5, heading6), paragraph.InnerText));
+                    var last = document.Paragraphs.LastOrDefault();
+                    if (last == null || last.Heading1 != heading1 || last.Heading2 != heading2 || last.Heading3 != heading3)
+                        document.Paragraphs.Add(new ExtractedParagraph(heading1, heading2, FillAdditionalHeading(heading3, heading4, heading5, heading6), paragraph.InnerText));
+                    else
+                        last.Paragraph += " \\n " + paragraph.InnerText;
                     level0counter = 0;
                 }
             }
