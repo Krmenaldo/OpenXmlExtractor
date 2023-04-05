@@ -9,7 +9,9 @@
 
   <ItemGroup>
     <None Remove="documents\Attendance Policy_2023.docx" />
+    <None Remove="documents\Bezbednost i zdravlje na radu u BIB.docx" />
     <None Remove="documents\Compensatory Off Policy_Jan2023.docx" />
+    <None Remove="documents\Digitalno bankarstvo za FL 6.docx" />
     <None Remove="documents\Emergency Financial Assistance Policy.docx" />
     <None Remove="documents\Employee Referral Policy_2023.docx" />
     <None Remove="documents\POSH Policy 2023.docx" />
@@ -23,8 +25,14 @@
     <Content Include="documents\Attendance Policy_2023.docx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="documents\Bezbednost i zdravlje na radu u BIB.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="documents\Compensatory Off Policy_Jan2023.docx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="documents\Digitalno bankarstvo za FL 6.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="documents\Emergency Financial Assistance Policy.docx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

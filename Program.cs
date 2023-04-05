@@ -1,21 +1,14 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using DocumentFormat.OpenXml.Bibliography;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using ParagraphExtractor;
 
 Console.WriteLine("Hello, World!");
 string[] files =  {
-    "Attendance Policy_2023",
-    "Compensatory Off Policy_Jan2023",
-    "Emergency Financial Assistance Policy",
-    "Employee Referral Policy_2023",
-    "POSH Policy 2023",
-    "SL- Leave Policy_2023",
-    "SL Relocation Policy_2023",
-    "Technical Certification Policy_2023",
-    "Whistle Blower Policy_2023"
+    //"Bezbednost i zdravlje na radu u BIB",
+    "Digitalno bankarstvo za FL 6"
 };
-var cnt = 0;
 var line = string.Empty;
 foreach (var file in files)
 {
@@ -34,6 +27,8 @@ foreach (var file in files)
         var level0counter = 0;
         var level1counter = 0;
         var level2counter = 0;
+        var cnt = 1;
+        string lastText = string.Empty;
         foreach (var item in doc.MainDocumentPart.Document.Body.ChildElements)
         {
             if (item is not Paragraph && item is not Table)
@@ -43,57 +38,40 @@ foreach (var file in files)
             if (item is Table)
             {
                 var table = (Table)item;
-                var lastRow = table.ChildElements.OfType<TableRow>().LastOrDefault();
-                var numOfColumns = 0;
-                if (lastRow != null)
-                    numOfColumns = lastRow.ChildElements.OfType<TableCell>().Count();
-
-                if (numOfColumns > 0)
+                var tableText = string.Empty;
+                var counter = 0;
+                foreach (var row in table.ChildElements.OfType<TableRow>())
                 {
-                    var tableHeader = table.ChildElements.OfType<TableRow>().FirstOrDefault(t => t.ChildElements.OfType<TableCell>().Count() == numOfColumns);
-                    if (tableHeader != null)
+                    counter++;
+                    tableText += "[" + counter + "] - ";
+                    var counter2 = 0;
+                    foreach (var cell in row.ChildElements.OfType<TableCell>())
                     {
-                        var tableText = string.Empty;
-                        foreach (var row in table.ChildElements.OfType<TableRow>().Where(t => t.ChildElements.OfType<TableCell>().Count() == numOfColumns).Skip(1))
-                        {
-                            var counter = 0;
-                            var rowName = string.Empty;
-                            foreach (var cell in row.ChildElements.OfType<TableCell>())
-                            {
-                                if (counter == 0)
-                                {
-                                    rowName = cell.InnerText;
-                                }
-                                else
-                                    tableText += "[" + rowName + ":" + tableHeader.ChildElements.OfType<TableCell>().ElementAt(counter)?.InnerText + "] " + cell.InnerText + " ";
-                                counter++;
-                            }
-                        }
-                        var last = document.Paragraphs.LastOrDefault();
-                        if (last == null || last.Heading1 != heading1 || last.Heading2 != heading2 || last.Heading3 != heading3)
-                            document.Paragraphs.Add(new ExtractedParagraph(heading1, heading2, FillAdditionalHeading(heading3, heading4, heading5, heading6), tableText));
-                        else
-                            last.Paragraph += " \\n " + tableText;
+                        counter2++;
+                        tableText += "(" + counter2 + ") " + cell.InnerText;
                     }
+                    tableText += " \\n ";
                 }
-
+                document.Paragraphs.Add(new ExtractedParagraph(heading1, heading2, FillAdditionalHeading(heading3, heading4, heading5, heading6), tableText));
             }
             if (item is Paragraph)
             {
                 var paragraph = (Paragraph)item;
-                //var images = GetImagesFromParagraph(paragraph, doc);
-                //if(images != null && images.Any())
-                //{
-                //    foreach (var image in images)
-                //    {
-                //        using (var fileStream = File.Create(Guid.NewGuid() + ExtensionFromContentType(image.ContentType)))
-                //        {
-                //            image.GetStream().CopyTo(fileStream);
-                //        }
-                //    }
-                //}
+                if (paragraph.InnerText.Contains("PAGEREF _Toc") || paragraph.InnerText.Contains("TOC \\o"))
+                    continue;
+                var images = GetImagesFromParagraph(paragraph, doc);
+                if (images != null && images.Any())
+                {
+                    foreach (var image in images)
+                    {
+                        using (var fileStream = File.Create(Guid.NewGuid() + ExtensionFromContentType(image.ContentType)))
+                        {
+                            image.GetStream().CopyTo(fileStream);
+                        }
+                    }
+                }
                 var style = paragraph.ParagraphProperties?.ParagraphStyleId?.Val?.Value;
-                if ((!string.IsNullOrEmpty(style) && style.Contains("Heading")) || paragraph.ParagraphProperties?.NumberingProperties != null)
+                if ((!string.IsNullOrEmpty(style) && (style.Contains("Heading") || style.Contains("List"))) || paragraph.ParagraphProperties?.NumberingProperties != null)
                 {
                     if (!string.IsNullOrEmpty(style) && style.Contains("Heading1"))
                     {
@@ -139,43 +117,60 @@ foreach (var file in files)
                             heading6 = paragraph.InnerText;
                         level0counter = 0;
                     }
-                    else if (paragraph.ParagraphProperties?.NumberingProperties != null)
+                    else if (paragraph.ParagraphProperties?.NumberingProperties != null || (!string.IsNullOrEmpty(style) && style.Contains("List")))
                     {
                         var last = document.Paragraphs.LastOrDefault();
-                        var addNewLine = true;
-                        if (last == null || last.Heading1 != heading1 || last.Heading2 != heading2 || last.Heading3 != heading3)
+                        if (last == null || last.Heading1 != heading1 || last.Heading2 != heading2 || last.Heading3 != heading3
+                            || (last != null && last.ParagraphType == ParagraphType.List && ShouldCreateNew(last.Paragraph, paragraph.InnerText))
+                            || (last != null && last.ParagraphType == ParagraphType.Text && last.Paragraph != lastText))
                         {
-                            document.Paragraphs.Add(new ExtractedParagraph(heading1, heading2, FillAdditionalHeading(heading3, heading4, heading5, heading6), string.Empty));
+                            document.Paragraphs.Add(new ExtractedParagraph(heading1, heading2, FillAdditionalHeading(heading3, heading4, heading5, heading6), lastText, ParagraphType.List));
                             last = document.Paragraphs.LastOrDefault();
-                            addNewLine = false;
                         }
-                        if (paragraph.ParagraphProperties.NumberingProperties.NumberingLevelReference.Val.Value == 0)
+                        last.ParagraphType = ParagraphType.List;
+                        if ((paragraph.ParagraphProperties?.NumberingProperties != null && paragraph.ParagraphProperties.NumberingProperties.NumberingLevelReference.Val.Value == 0) 
+                            || (!string.IsNullOrEmpty(style) && style.Contains("ListBullet2")))
                         {
                             level0counter++;
                             level1counter = 0;
                             level2counter = 0;
-                            last.Paragraph += (addNewLine ? " \\n " : string.Empty) + "[" + level0counter + "] " + paragraph.InnerText;
+                            last.Paragraph += " \\n [" + level0counter + "] " + paragraph.InnerText;
                         }
-                        if (paragraph.ParagraphProperties.NumberingProperties.NumberingLevelReference.Val.Value == 1)
+                        else if ((paragraph.ParagraphProperties?.NumberingProperties != null && paragraph.ParagraphProperties.NumberingProperties.NumberingLevelReference.Val.Value == 1)
+                            || (!string.IsNullOrEmpty(style) && style.Contains("ListBullet3")))
                         {
                             level1counter++;
                             level2counter = 0;
-                            last.Paragraph += (addNewLine ? " \\n " : string.Empty) + "[" + level0counter + "." + level1counter + "] " + paragraph.InnerText;
+                            last.Paragraph += " \\n [" + level0counter + "." + level1counter + "] " + paragraph.InnerText;
                         }
-                        if (paragraph.ParagraphProperties.NumberingProperties.NumberingLevelReference.Val.Value == 2)
+                        else if ((paragraph.ParagraphProperties?.NumberingProperties != null && paragraph.ParagraphProperties.NumberingProperties.NumberingLevelReference.Val.Value == 2)
+                            || (!string.IsNullOrEmpty(style) && style.Contains("ListBullet4")))
                         {
                             level2counter++;
-                            last.Paragraph += (addNewLine ? " \\n " : string.Empty) + "[" + level0counter + "." + level1counter + "." + level2counter + "] " + paragraph.InnerText;
+                            last.Paragraph += " \\n [" + level0counter + "." + level1counter + "." + level2counter + "] " + paragraph.InnerText;
+                        }
+                        else if (!string.IsNullOrEmpty(style) && style.Contains("List"))
+                        {
+                            level0counter++;
+                            level1counter = 0;
+                            level2counter = 0;
+                            last.Paragraph += " \\n [" + level0counter + "] " + paragraph.InnerText;
                         }
                     }
                 }
                 else
                 {
                     var last = document.Paragraphs.LastOrDefault();
-                    if (last == null || last.Heading1 != heading1 || last.Heading2 != heading2 || last.Heading3 != heading3)
+                    lastText = paragraph.InnerText;
+                    if (last == null || last.Heading1 != heading1 || last.Heading2 != heading2 || last.Heading3 != heading3 || last.ParagraphType != ParagraphType.Text)
                         document.Paragraphs.Add(new ExtractedParagraph(heading1, heading2, FillAdditionalHeading(heading3, heading4, heading5, heading6), paragraph.InnerText));
                     else
-                        last.Paragraph += " \\n " + paragraph.InnerText;
+                    {
+                        if (ShouldCreateNew(last.Paragraph, paragraph.InnerText))
+                            document.Paragraphs.Add(new ExtractedParagraph(heading1, heading2, FillAdditionalHeading(heading3, heading4, heading5, heading6), paragraph.InnerText));
+                        else
+                            last.Paragraph += " \\n " + paragraph.InnerText;
+                    }
                     level0counter = 0;
                 }
             }
@@ -190,6 +185,12 @@ foreach (var file in files)
 }
 File.WriteAllTextAsync("all.csv", line);
 Console.ReadLine();
+
+bool ShouldCreateNew(string currentParagraph, string newParagraph)
+{
+    var testParagraph = currentParagraph + " \\n " + newParagraph;
+    return (CountTokens(testParagraph) > 200 && CountTokens(newParagraph) > 100) || CountTokens(testParagraph) > 250;
+}
 
 string FillAdditionalHeading(string heading3, string heading4, string heading5, string heading6)
 {
@@ -228,4 +229,22 @@ string ExtensionFromContentType(string contentType)
             return ".jpg";
     }
     return string.Empty;
+}
+
+decimal CountTokens(string text)
+{
+    int wordCount = 0, index = 0;
+    while (index < text.Length && char.IsWhiteSpace(text[index]))
+        index++;
+
+    while (index < text.Length)
+    {
+        while (index < text.Length && !char.IsWhiteSpace(text[index]))
+            index++;
+        wordCount++;
+        while (index < text.Length && char.IsWhiteSpace(text[index]))
+            index++;
+    }
+
+    return (decimal)(wordCount * 1.25);
 }
